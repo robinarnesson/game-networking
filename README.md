@@ -1,6 +1,6 @@
 # game-networking
 
-A simple game-like networking program that use client-side prediction and entity interpolation. The project is based on Valves description of basic networking for the Source engine, read [here](https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking).
+A simple game-like networking program that uses client-side prediction and entity interpolation. The project is based on Valves description of basic networking for the Source engine, read [here](https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking).
 
 Watch demo:
 [http://youtu.be/A4RfSNtUu6c](http://youtu.be/A4RfSNtUu6c)
