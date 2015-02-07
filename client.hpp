@@ -266,6 +266,10 @@ private:
 
   void interpolate(boost::optional<network::world_snapshot&>& from,
       boost::optional<network::world_snapshot&>& to, uint64_t time_point) {
+    //
+    // TODO: put interpolation code in class world and player
+    //
+
     // get interpolation time fraction
     double fraction = get_time_fraction(from.get().client_time_ms,
         to.get().client_time_ms, time_point);

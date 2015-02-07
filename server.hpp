@@ -20,10 +20,13 @@ public:
       acceptor_(io_service_, endpoint_),
       timer_(io_service_)
   {
-    INFO("server started");
     start_socket_acceptor();
     start_client_updater();
-    io_service_.run();
+    io_service_thread_ = std::thread([this](){ io_service_.run(); });
+    INFO("server started");
+
+    std::cin.get(); // exit on key pressed
+    stop();
   }
 
 private:
@@ -91,6 +94,12 @@ private:
     // send to all clients
     for (auto& c : connections_)
       network::write_data(data, c->socket);
+  }
+
+  void stop() {
+    INFO("stopping server");
+    io_service_.stop();
+    io_service_thread_.join();
   }
 
   void start_socket_acceptor() {
@@ -197,6 +206,9 @@ private:
   boost::asio::ip::tcp::acceptor acceptor_;
   boost::asio::deadline_timer timer_;
   std::list<network::connection_ptr> connections_;
+
+  // other
+  std::thread io_service_thread_;
 };
 
 #endif // SERVER_HPP_

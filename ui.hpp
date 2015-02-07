@@ -62,6 +62,7 @@ public:
   void stop() {
     SDL_DestroyTexture(texture_loading_);
     SDL_DestroyWindow(window_);
+    SDL_DestroyRenderer(renderer_);
     SDL_Quit();
   }
 
