@@ -7,10 +7,6 @@
 #include <string>
 #include <thread>
 
-#ifndef _DEBUG
-  #define _DEBUG 0
-#endif
-
 #define DEBUG(_m_) do {                     \
   if (_DEBUG) {                             \
     std::cerr                               \
