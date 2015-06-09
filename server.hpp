@@ -24,9 +24,12 @@ public:
     start_client_updater();
     io_service_thread_ = std::thread([this](){ io_service_.run(); });
     INFO("server started");
+  }
 
-    std::cin.get(); // exit on key pressed
-    stop();
+  ~server() {
+    INFO("stopping server");
+    io_service_.stop();
+    io_service_thread_.join();
   }
 
 private:
@@ -94,12 +97,6 @@ private:
     // send to all clients
     for (auto& c : connections_)
       network::write_data(data, c->socket);
-  }
-
-  void stop() {
-    INFO("stopping server");
-    io_service_.stop();
-    io_service_thread_.join();
   }
 
   void start_socket_acceptor() {

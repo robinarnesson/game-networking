@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <math.h>
-#define GLM_FORCE_RADIANS
 #include "glm/gtc/matrix_transform.hpp"
 #include <glm/gtc/type_ptr.hpp>
 #include <SDL2/SDL.h>

@@ -10,7 +10,8 @@ int main(int argc, char const *argv[]) {
   }
 
   try {
-    server(std::stoi(argv[1]));
+    server s(std::stoi(argv[1]));
+    std::cin.get(); // exit on key pressed
   } catch (std::exception& e) {
     std::cerr << "exception: " << e.what() << std::endl;
     return 2;
