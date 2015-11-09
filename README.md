@@ -24,8 +24,10 @@ Run in terminal:
 * Space: Move up
 * Left ctrl: Move down
 * Mouse look
+
 ##### 2d-controls:
 * Move around with the arrow keys
+
 ##### Other:
 * F1: Toggle debug mode
 * F2: Toggle prediction and interpolation
