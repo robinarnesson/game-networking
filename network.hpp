@@ -8,7 +8,7 @@
 #include "world.hpp"
 
 namespace network {
-  const int HEADER_SIZE = 16; // bytes
+  const int HEADER_SIZE = 8; // bytes
   const int CLASS_ID_SIZE = 3; // bytes
 
   ///////////////////////////////////////////////////////////////////
@@ -30,6 +30,7 @@ namespace network {
 
   private:
     friend class boost::serialization::access;
+
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
       ar & snapshot;
@@ -65,6 +66,7 @@ namespace network {
 
   private:
     friend class boost::serialization::access;
+
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
       ar & player_color_AABBGGRR;
@@ -81,6 +83,7 @@ namespace network {
 
   private:
     friend class boost::serialization::access;
+
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
       ar & player_id;
@@ -97,6 +100,7 @@ namespace network {
 
   private:
     friend class boost::serialization::access;
+
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
       ar & reason;

@@ -184,6 +184,7 @@ private:
 
   void remove_connection_from_list(network::connection_ptr connection) {
     auto i = connections_.begin();
+
     while (i != connections_.end()) {
       if (i->get() == connection.get()) {
         connections_.erase(i);

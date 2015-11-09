@@ -2,6 +2,7 @@
 #define MISC_HPP_
 
 #include <ctime>
+#include <fstream>
 #include <iostream>
 #include <random>
 #include <string>
@@ -17,11 +18,13 @@
   }                                         \
 } while (0)
 
-#define INFO(_m_) do {                      \
-  std::cout                                 \
-    << misc::get_datetime() << " | " << _m_ \
-    << std::endl;                           \
-  std::cout.flush();                        \
+#define INFO(_m_) do {                        \
+  if (_INFO) {                                \
+    std::cout                                 \
+      << misc::get_datetime() << " | " << _m_ \
+      << std::endl;                           \
+    std::cout.flush();                        \
+  }                                           \
 } while (0)
 
 namespace misc {
@@ -38,10 +41,11 @@ namespace misc {
     return std::chrono::system_clock::now().time_since_epoch() / std::chrono::milliseconds(1);
   }
 
-  uint32_t get_random_color_AABBGGRR() {
+  uint32_t generate_color_AABBGGRR() {
     std::random_device rd;
     std::mt19937_64 gen(rd());
-    std::uniform_int_distribution<int> dis(0x80, 0xff); // bright colors
+    std::uniform_int_distribution<int> dis(0x80, 0xFF);
+
     return (0xff << 24) | (dis(gen) << 16) | (dis(gen) << 8) | dis(gen);
   }
 
@@ -50,7 +54,16 @@ namespace misc {
     time_t rawtime;
     time(&rawtime);
     strftime(buffer, 32, "%F %I:%M:%S", localtime(&rawtime));
+
     return std::string(buffer);
+  }
+
+  std::string get_file_content(const char* file) {
+    std::ifstream ifs(file);
+
+    return std::string(
+        (std::istreambuf_iterator<char>(ifs)),
+        (std::istreambuf_iterator<char>()));
   }
 }
 

@@ -17,10 +17,10 @@
 
 class client {
 public:
-  static const int MAIN_LOOP_SLEEP_MS = 10;
-  static const int INTERPOLATION_TIME_MS = 150;
+  static const int MAIN_LOOP_SLEEP_MS = 15;
+  static const int INTERPOLATION_TIME_MS = 300;
 
-  client(std::string host, std::string port)
+  client(std::string host, std::string port, ui& interface)
     : player_id_(0),
       game_time_ms_(0),
       io_service_(),
@@ -31,7 +31,8 @@ public:
       port_(port),
       exit_program_(false),
       predict_and_interpolate_(true),
-      debug_(true)
+      debug_(false),
+      interface_(interface)
   {
     start_server_connect();
     io_service_thread_ = std::thread([this](){ io_service_.run(); });
@@ -44,26 +45,18 @@ public:
     io_service_thread_.join();
   }
 
-  void start_ui() {
-    INFO("starting ui");
-
-    ui interface;
-    if (!interface.start(std::string("client program, " + host_ + ":" + port_)))
-      exit_program_ = true;
+  void join_game() {
+    INFO("joining game");
 
     // wait for server to accept join request and send world snapshot
-    while (!game_ready() && !exit_program_) {
-      interface.draw_loading();
+    while (!game_ready() && !exit_program_)
       misc::sleep_ms(200);
-    }
 
-    main_loop(interface);
-
-    interface.stop();
+    main_loop();
   }
 
 private:
-  void main_loop(ui& interface) {
+  void main_loop() {
     command command;
     int command_id = 1;
     uint64_t frame_time_ms = 0;
@@ -74,33 +67,38 @@ private:
       start_ms = misc::get_time_ms();
 
       // update interface event queue
-      interface.poll_events();
+      interface_.poll_events();
 
       // check for quit
-      if (interface.check_event_quit())
+      if (interface_.check_event_quit())
         break;
 
       // update debug state
-      if (interface.check_event_button_released(keyboard::button::n1))
+      if (interface_.check_event_button_released(keyboard::button::f1)) {
         debug_ = !debug_;
+        INFO("debug: " << debug_);
+      }
 
       // update prediction and interpolation state
-      if (interface.check_event_button_released(keyboard::button::n2))
+      if (interface_.check_event_button_released(keyboard::button::f2)) {
         predict_and_interpolate_ = !predict_and_interpolate_;
+        INFO("predict and interpolate: " << predict_and_interpolate_);
+      }
 
       // build move command
       command.id = command_id++;
-      command.buttons = interface.get_pressed_buttons();
+      command.buttons = interface_.get_pressed_buttons();
+      interface_.get_delta_angles(command.horz_delta_angel, command.vert_delta_angel);
       command.duration_ms = frame_time_ms;
 
-      // check if quit button was pressed
-      if (command.buttons & keyboard::button::escape)
+      // check for quit
+      if (command.buttons & keyboard::button::quit)
         break;
 
       world_mutex_.lock();
       commands_mutex_.lock();
 
-      if (command.buttons) {
+      if (command.buttons || fabs(command.horz_delta_angel + command.vert_delta_angel) > 0.0) {
         // handle client-side prediction
         if (predict_and_interpolate_) {
           // save command for next world update
@@ -125,20 +123,24 @@ private:
           interpolate(from, to, render_time);
       }
 
+      interface_.draw_clear();
+
       // draw smoothed world
-      interface.draw_world(world_, false);
+      interface_.draw_world(world_, player_id_, false);
 
       // draw actual world
       if (debug_)
-        interface.draw_world(world_snapshots_.back().snapshot, true);
+        interface_.draw_world(world_snapshots_.back().snapshot, player_id_, true);
+
+      interface_.draw_update();
 
       commands_mutex_.unlock();
       world_mutex_.unlock();
 
       stop_ms = misc::get_time_ms();
-
       frame_time_ms = MAIN_LOOP_SLEEP_MS + stop_ms - start_ms;
       game_time_ms_ += frame_time_ms;
+
       misc::sleep_ms(MAIN_LOOP_SLEEP_MS);
     }
   }
@@ -183,7 +185,7 @@ private:
 
       // get command id for last processed command on server
       boost::optional<player&> p = world_.get_player(player_id_);
-      uint32_t last_command_id = p.get().get_last_command_id();
+      int last_command_id = p.get().get_last_command_id();
 
       // remove commands older than last command
       auto i = commands_.begin();
@@ -223,7 +225,8 @@ private:
 
   void make_join_request() {
     network::join_request m;
-    m.player_color_AABBGGRR = misc::get_random_color_AABBGGRR(); // random for now
+    m.player_color_AABBGGRR = misc::generate_color_AABBGGRR();
+    DEBUG("player color: " << std::hex << std::setfill('0') << m.player_color_AABBGGRR);
     network::write_object(network::join_request::CLASS_ID, m, socket_);
     INFO("join request sent");
   }
@@ -243,13 +246,16 @@ private:
       world_mutex_.unlock();
       return exists;
     }
+
     return false;
   }
 
   uint64_t get_interpolation_time_point_ms() {
     uint64_t time_point = 0;
+
     if (game_time_ms_ > INTERPOLATION_TIME_MS)
       time_point = game_time_ms_ - INTERPOLATION_TIME_MS;
+
     return time_point;
   }
 
@@ -284,13 +290,15 @@ private:
             // calc interpolated player values
             double new_x = (p_to.get_x() - p_from.get_x()) * fraction + p_from.get_x();
             double new_y = (p_to.get_y() - p_from.get_y()) * fraction + p_from.get_y();
-            double new_angel = (p_to.get_angel() - p_from.get_angel())
-                * fraction + p_from.get_angel();
+            double new_z = (p_to.get_z() - p_from.get_z()) * fraction + p_from.get_z();
+            double new_angel = (p_to.get_horz_angel() - p_from.get_horz_angel())
+                * fraction + p_from.get_horz_angel();
 
             // assign values to player
             p_real.get().set_x(new_x);
             p_real.get().set_y(new_y);
-            p_real.get().set_angel(new_angel);
+            p_real.get().set_z(new_z);
+            p_real.get().set_horz_angel(new_angel);
           }
         }
       }
@@ -305,6 +313,7 @@ private:
     bool remove_next = false;
     uint64_t render_time = get_interpolation_time_point_ms();
     auto i = world_snapshots_.end();
+
     while (i != world_snapshots_.begin()) {
       if (remove_next)
         i = world_snapshots_.erase(i);
@@ -395,6 +404,7 @@ private:
   std::atomic<bool> exit_program_;
   std::atomic<bool> predict_and_interpolate_;
   std::atomic<bool> debug_;
+  ui& interface_;
 };
 
 #endif // CLIENT_HPP_

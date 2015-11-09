@@ -14,22 +14,25 @@ class world {
 public:
   static const uint8_t CLASS_ID = 2;
 
-  static const int WIDTH = 400; // px
-  static const int HEIGTH = 400; // px
+  static const int WIDTH = 5; // meter
+  static const int HEIGTH = 5; // meter
 
   bool add_player(player& player) {
     uint8_t player_id = generate_player_id();
+
     if (!player_id)
       return false;
 
     player.set_id(player_id);
     assign_random_position(player);
     players_.push_back(player);
+
     return true;
   }
 
   void remove_player(uint8_t player_id) {
     auto i = players_.begin();
+
     while (i != players_.end()) {
       if (i->get_id() == player_id) {
         players_.erase(i);
@@ -41,12 +44,14 @@ public:
 
   boost::optional<player&> get_player(uint8_t player_id) {
     boost::optional<player&> opt_player;
-    for (player& p : players_) {
+
+    for (auto& p : players_) {
       if (p.get_id() == player_id) {
         opt_player = p;
         break;
       }
     }
+
     return opt_player;
   }
 
@@ -60,12 +65,14 @@ public:
 
   void run_command(const command& cmd, uint8_t player_id) {
     boost::optional<player&> opt_p = get_player(player_id);
+
     if (opt_p)
       opt_p.get().run_command(cmd);
   }
 
 private:
   friend class boost::serialization::access;
+
   template<class Archive>
   void serialize(Archive& ar, const unsigned int version) {
     ar & players_;
@@ -75,25 +82,30 @@ private:
     for (const player& p : players_)
       if (p.get_id() == id)
         return false;
+
     return true;
   }
 
   void assign_random_position(player& player) {
     std::random_device rd;
     std::mt19937_64 gen(rd());
-    std::uniform_int_distribution<int> dis1(20, WIDTH - 20); // not too close to the edge
+
+    std::uniform_int_distribution<int> dis1(-WIDTH, WIDTH);
     player.set_x(dis1(gen));
-    std::uniform_int_distribution<int> dis2(20, HEIGTH - 20);
-    player.set_y(dis2(gen));
+
+    std::uniform_int_distribution<int> dis2(-HEIGTH, HEIGTH);
+    player.set_z(dis2(gen));
   }
 
   uint8_t generate_player_id() const {
     uint8_t new_id = 1;
+
     while (new_id) {
       if (player_id_is_free(new_id))
         return new_id;
       new_id++;
     }
+
     return 0;
   }
 
