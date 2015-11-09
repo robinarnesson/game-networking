@@ -17,16 +17,12 @@ Run in terminal:
 ```
 ### Controls
 ##### 3d-controls:
-* W: Move forward
-* S: Move backward
-* A: Step left
-* D: Step right
+* WASD + mouse look
 * Space: Move up
 * Left ctrl: Move down
-* Mouse look
 
 ##### 2d-controls:
-* Move around with the arrow keys
+* Use arrow keys
 
 ##### Other:
 * F1: Toggle debug mode
